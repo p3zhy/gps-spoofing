@@ -10,4 +10,5 @@ linfa = "0.7.0"
 linfa-linear = "0.7.0"
 rand = { version = "0.8", default-features = false }
 ndarray = { version = "0.15", default-features = false }
-tletools = { git = "https://github.com/p3zhy/tletools-rs", default-features = false }
+satellite = { git = "https://github.com/p3zhy/satellite-rs", branch = "master", default-features = false }
+chrono = "0.4.35"

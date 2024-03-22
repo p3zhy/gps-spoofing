@@ -5,3 +5,6 @@ pub(crate) mod edv;
 pub(crate) mod pcc;
 pub(crate) mod pdm;
 pub(crate) mod utilities;
+
+extern crate alloc;
+use alloc::vec::Vec;
