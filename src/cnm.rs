@@ -1,14 +1,4 @@
-struct SatelliteState {
-    carrier_to_noise_density: u8,
-}
-
-impl SatelliteState {
-    fn new(carrier_to_noise_density: u8) -> Self {
-        Self {
-            carrier_to_noise_density,
-        }
-    }
-}
+use crate::utilities::Satellite;
 struct CarrierToNoiseDensityMethod {
     min_carrier_to_noise_density: u8,
     max_carrier_to_noise_density: u8,
@@ -22,7 +12,7 @@ impl CarrierToNoiseDensityMethod {
         }
     }
 
-    fn detect_spoofing_attack(&self, satellites: &[SatelliteState]) -> bool {
+    fn detect_spoofing_attack(&self, satellites: &[Satellite]) -> bool {
         for satellite in satellites {
             if satellite.carrier_to_noise_density < self.min_carrier_to_noise_density
                 || satellite.carrier_to_noise_density > self.max_carrier_to_noise_density
