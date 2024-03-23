@@ -1,4 +1,4 @@
-use crate::utilities::UnixTimestamp;
+use chrono::prelude::*;
 use linfa::prelude::*;
 use linfa_linear::LinearRegression;
 use ndarray::{Array1, Array2, Axis};
@@ -7,12 +7,12 @@ pub struct TimeDriftMethod<const N: usize> {
     past_measurements: [(f64, f64); N],
 
     max_clock_drift_dev: f64,
-    initial_time: UnixTimestamp,
+    initial_time: DateTime<Utc>,
     measurement_count: usize,
 }
 
 impl<const N: usize> TimeDriftMethod<N> {
-    pub fn new(max_clock_drift_dev: f64, initial_time: UnixTimestamp) -> Self {
+    pub fn new(max_clock_drift_dev: f64, initial_time: DateTime<Utc>) -> Self {
         Self {
             past_measurements: [(0.0, 0.0); N],
             max_clock_drift_dev,
@@ -23,13 +23,13 @@ impl<const N: usize> TimeDriftMethod<N> {
 
     pub fn detect_spoofing_attack(
         &mut self,
-        local_system_time: UnixTimestamp,
-        gps_time: UnixTimestamp,
+        local_system_time: DateTime<Utc>,
+        gps_time: DateTime<Utc>,
     ) -> bool {
         let max_past_measurements = self.past_measurements.len();
-        let clock_drift = local_system_time.as_f64() - gps_time.as_f64();
+        let clock_drift = local_system_time.timestamp() - gps_time.timestamp();
         let index = self.measurement_count % max_past_measurements;
-        self.past_measurements[index] = (clock_drift, local_system_time.as_f64());
+        self.past_measurements[index] = (clock_drift as f64, local_system_time.timestamp() as f64);
         self.measurement_count += 1;
 
         if self.measurement_count < max_past_measurements {
