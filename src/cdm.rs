@@ -1,22 +1,20 @@
+use crate::*;
 use chrono::prelude::*;
 use linfa::prelude::*;
 use linfa_linear::LinearRegression;
 use ndarray::{Array1, Array2, Axis};
 
-pub struct TimeDriftMethod<const N: usize> {
-    past_measurements: [(f64, f64); N],
-
+pub struct TimeDriftMethod {
+    past_measurements: Vec<(f64, f64)>,
     max_clock_drift_dev: f64,
-    initial_time: DateTime<Utc>,
     measurement_count: usize,
 }
 
-impl<const N: usize> TimeDriftMethod<N> {
-    pub fn new(max_clock_drift_dev: f64, initial_time: DateTime<Utc>) -> Self {
+impl TimeDriftMethod {
+    pub fn new(max_clock_drift_dev: f64) -> Self {
         Self {
-            past_measurements: [(0.0, 0.0); N],
+            past_measurements: Vec::new(),
             max_clock_drift_dev,
-            initial_time,
             measurement_count: 0,
         }
     }
@@ -26,32 +24,27 @@ impl<const N: usize> TimeDriftMethod<N> {
         local_system_time: DateTime<Utc>,
         gps_time: DateTime<Utc>,
     ) -> bool {
-        let max_past_measurements = self.past_measurements.len();
         let clock_drift = local_system_time.timestamp() - gps_time.timestamp();
-        let index = self.measurement_count % max_past_measurements;
-        self.past_measurements[index] = (clock_drift as f64, local_system_time.timestamp() as f64);
+        self.past_measurements
+            .push((clock_drift as f64, local_system_time.timestamp() as f64));
         self.measurement_count += 1;
 
-        if self.measurement_count < max_past_measurements {
+        if self.past_measurements.len() < 2 {
             return false;
         }
 
-        let mut x = [0.0; N];
-        let mut y = [0.0; N];
-        for i in 0..max_past_measurements {
-            let (drift, time) = self.past_measurements[(index + i) % max_past_measurements];
-            x[i] = drift;
-            y[i] = time;
-        }
+        let max_past_measurements = self.past_measurements.len();
 
-        let mut y_noisy = y;
+        let (x, y): (Vec<_>, Vec<_>) = self.past_measurements.iter().cloned().unzip();
+
+        let mut y_noisy = y.clone();
 
         for y_val in y_noisy.iter_mut() {
             *y_val += rand::random::<f64>() * 0.0001 + 0.000001;
         }
 
-        let data = Array2::from_shape_vec((max_past_measurements, 1), x.to_vec()).unwrap();
-        let targets = Array1::from(y_noisy.to_vec());
+        let data = Array2::from_shape_vec((max_past_measurements, 1), x).unwrap();
+        let targets = Array1::from(y_noisy);
 
         let dataset = Dataset::new(data, targets);
 
